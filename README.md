@@ -1,39 +1,77 @@
-# Heart Disease Risk Prediction
+# Boolean Data - Heart Disease Risk Prediction
 
 ## Overview
-This application uses a Random Forest classifier to predict heart disease risk based on clinical patient data.
+A Snowflake Native Application that predicts heart disease risk based on clinical
+and lifestyle parameters using a Random Forest Classifier. The app includes
+preloaded sample data and an interactive Streamlit interface for immediate use.
 
 ## Features
-- Train a model on the included clinical dataset
-- Input patient details via an interactive form
-- Get real-time risk predictions with probability scores
-- Save prediction results to a Snowflake table
+- Predict heart disease risk from 12 clinical input features
+- View prediction probability scores
+- Save prediction results to Snowflake tables
+- Preloaded training dataset (32 patient records)
 
-## Setup
-1. Install the application
-2. Grant the requested privileges (CREATE TABLE, warehouse USAGE)
-3. Open the Streamlit app from the installed application
+## Configuration Steps
 
-## Input Parameters
-| Parameter         | Range     |
-|-------------------|-----------|
-| Age               | 20 - 90   |
-| Gender            | M / F     |
-| BMI               | 15 - 45   |
-| Blood Pressure    | 80 - 200  |
-| Glucose Level     | 70 - 250  |
-| Cholesterol       | 100 - 300 |
-| Smoking           | 0 / 1     |
-| Physical Activity | 0 / 1     |
-| Family History    | 0 / 1     |
-| Diet Score        | 2 - 10    |
-| Stress Level      | 2 - 10    |
-| Heart Rate        | 50 - 120  |
+1. Install the application from Snowflake Marketplace.
+2. Open the application in Snowsight.
+3. The CREATE WAREHOUSE privilege is automatically granted at install time.
+4. In the **Permissions** sidebar, click **Connect Warehouse** to bind a warehouse for query execution.
+5. The app is ready — enter patient details and run predictions.
 
-## Output
-- **Prediction**: High Risk or Low Risk
-- **Probability**: Confidence score (0 to 1)
+## Application Components
 
-## Privileges Required
-- CREATE TABLE: To save prediction results
-- USAGE on a warehouse: To run queries
+### Tables
+
+| Table | Description |
+|-------|-------------|
+| `app_schema.CLINICAL_DATA` | Preloaded training dataset with 32 patient records used to train the model |
+| `app_schema.CLINICAL_PREDICTION_RESULTS` | Stores user-generated prediction results |
+
+### Stored Procedures
+
+| Procedure | Parameters | Description |
+|-----------|------------|-------------|
+| `config.register_reference` | `(ref_name STRING, operation STRING, ref_or_alias STRING)` | Callback procedure for binding consumer warehouse reference via the Permissions SDK |
+
+### Streamlit App
+
+| Component | Description |
+|-----------|-------------|
+| `app_schema.heart_disease_app` | Interactive UI for entering patient data, running predictions, and saving results |
+
+## Required Privileges
+
+| Privilege / Reference | Type | Purpose |
+|-----------------------|------|---------|
+| `CREATE WAREHOUSE` | Account privilege (auto-granted at install) | Allows the app to create a warehouse if needed |
+| `consumer_warehouse` (USAGE, OPERATE) | Warehouse reference | Consumer-provided warehouse for executing prediction queries |
+
+## Machine Learning Model
+
+The application trains a Random Forest Classifier (100 estimators) on the CLINICAL_DATA
+table at app launch. The model uses an 80/20 train/test split and displays accuracy in the sidebar.
+
+### Input Features
+AGE, GENDER, BMI, BLOOD_PRESSURE, GLUCOSE_LEVEL, CHOLESTEROL, SMOKING,
+PHYSICAL_ACTIVITY, FAMILY_HISTORY, DIET_SCORE, STRESS_LEVEL, HEART_RATE
+
+### Output
+- Predicted Risk: High Risk (1) or Low Risk (0)
+- Probability Score (0.0 - 1.0)
+
+## Example SQL Commands
+
+View the training dataset:
+
+    SELECT * FROM <app_name>.app_schema.CLINICAL_DATA LIMIT 10;
+
+View saved prediction results:
+
+    SELECT * FROM <app_name>.app_schema.CLINICAL_PREDICTION_RESULTS;
+
+Count predictions by risk level:
+
+    SELECT PREDICTED_RISK, COUNT(*) AS total
+    FROM <app_name>.app_schema.CLINICAL_PREDICTION_RESULTS
+    GROUP BY PREDICTED_RISK;
